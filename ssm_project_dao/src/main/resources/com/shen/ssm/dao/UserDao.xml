@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shen.ssm.dao.UserDao">
+    <resultMap id="findUserInfo" type="userInfo">
+        <id column="id" property="id"></id>
+        <result column="username" property="username"></result>
+        <result column="email" property="email"></result>
+        <result column="password" property="password"></result>
+        <result column="phoneNum" property="phoneNum"></result>
+        <result column="status" property="status"></result>
+        <collection property="roles" ofType="role">
+            <id column="rid" property="id"></id>
+            <result column="roleName" property="roleName"></result>
+            <result column="roleDesc" property="roleDesc"></result>
+        </collection>
+    </resultMap>
+    <select id="findUserByUsername" resultMap="findUserInfo" parameterType="String">
+        select u.*,r.id rid,r.rolename,r.roledesc
+        from users u
+        inner join users_role ur on u.id=ur.userid
+        left join role r on r.id=ur.roleid
+        where u.username=#{username}
+    </select>
+
+    <select id="findAll" resultType="userInfo">
+        select * from users
+    </select>
+
+    <insert id="saveUser" parameterType="userInfo">
+        insert into users(username,password,email,phoneNum,status) values
+        (#{username},#{password},#{email},#{phoneNum},#{status})
+    </insert>
+    <resultMap id="usersMap" type="userInfo">
+        <id column="id" property="id"></id>
+        <result column="username" property="username"></result>
+        <result column="email" property="email"></result>
+        <result column="password" property="password"></result>
+        <result column="phoneNum" property="phoneNum"></result>
+        <result column="status" property="status"></result>
+        <collection property="roles" ofType="role">
+            <id column="r_id" property="id"></id>
+            <result column="roleName" property="roleName"></result>
+            <result column="roleDesc" property="roleDesc"></result>
+            <collection property="permissions" ofType="permission">
+                <id column="p_id" property="id"></id>
+                <result column="permissionname" property="permissionName"></result>
+                <result column="url" property="url"></result>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="showUserById" resultMap="usersMap" parameterType="String">
+        select u.*,r.id r_id,r.rolename,r.roledesc,p.id p_id,p.permissionname,p.url
+        from users u
+        inner join users_role ur on u.id=ur.userid
+        inner join role r on r.id=ur.roleid
+        inner join role_permission rp on rp.roleid=r.id
+        inner join permission p on p.id=rp.permissionId
+        where u.id=#{id}
+    </select>
+    <delete id="deleteUser" parameterType="String">
+        delete from users where id=#{id}
+    </delete>
+    <select id="findUserRoleById" resultType="role" parameterType="String">
+        select * from role r where r.id not in (
+        select roleid from users_role ur where ur.userid=#{userId})
+    </select>
+    <insert id="addRoleToUser" parameterType="String">
+        insert into users_role values(#{userId},#{roleId})
+    </insert>
+    <select id="findById" resultType="userInfo" parameterType="String">
+        select * from users where id=#{userId}
+    </select>
+</mapper>
+

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shen.ssm.dao.OrdersDao">
+    <resultMap id="ordersFind" type="orders">
+        <id property="id" column="id"></id>
+        <result property="orderNum" column="orderNum"></result>
+        <result property="orderTime" column="orderTime"></result>
+        <result property="orderStatus" column="orderStatus"></result>
+        <result property="peopleCount" column="peopleCount"></result>
+        <result property="payType" column="payType"></result>
+        <result property="orderDesc" column="orderDesc"></result>
+        <collection property="product" ofType="product">
+            <id column="id" property="id"></id>
+            <result property="productName" column="productName"></result>
+            <result property="productPrice" column="productPrice"></result>
+        </collection>
+    </resultMap>
+    <select id="findAll" resultMap="ordersFind">
+        select * from(
+        select rownum r ,t.* from (select o.*,p.id pid,p.productname,p.productprice from orders o join product p on o.productid=p.id) t where rownum&lt;=#{end})
+        where r &gt;=#{start}
+
+    </select>
+    <select id="findAllCount" resultType="int">
+        select count(*) from orders o join product p on o.productid=p.id
+    </select>
+
+    <resultMap id="ordersMap" type="orders">
+        <id property="id" column="id"></id>
+        <!-- 缺省。。。 -->
+        <result property="orderNum" column="orderNum"></result>
+        <result property="orderTime" column="orderTime"></result>
+        <result property="orderStatus" column="orderStatus"></result>
+        <result property="peopleCount" column="peopleCount"></result>
+        <result property="payType" column="payType"></result>
+        <result property="orderDesc" column="orderDesc"></result>
+        <!-- 一对一的关系映射：配置封装user的内容-->
+        <association property="member"  javaType="member">
+            <id property="id" column="memberId"></id>
+            <result column="name" property="name"></result>
+            <result column="nickname" property="nickname"></result>
+            <result column="phoneNum" property="phoneNum"></result>
+            <result column="email" property="email"></result>
+        </association>
+        <!-- 一对一的关系映射：配置封装user的内容-->
+        <association property="product"  javaType="product">
+            <id property="id" column="productId"></id>
+            <result column="productNum" property="productNum"></result>
+            <result column="productName" property="productName"></result>
+            <result column="cityName" property="cityName"></result>
+            <result column="departureTime" property="departureTime"></result>
+            <result column="productPrice" property="productPrice"></result>
+            <result column="productDesc" property="productDesc"></result>
+            <result column="productStatus" property="productStatus"></result>
+        </association>
+        <!-- 配置多对多映射 -->
+        <collection property="travellers" ofType="com.shen.ssm.domain.Traveller">
+            <id property="id" column="t_id"></id>
+            <result property="name" column="t_name"></result>
+            <result property="sex" column="sex"></result>
+            <result property="phoneNum" column="t_phoneNum"></result>
+            <result property="credentialsType" column="credentialsType"></result>
+            <result property="credentialsNum" column="credentialsNum"></result>
+            <result property="travellerType" column="travellerType"></result>
+        </collection>
+    </resultMap>
+    <select id="findDetailsByID" resultMap="ordersMap" parameterType="String">
+        SELECT
+        o.*,
+        m.id memberId,m.name,m.nickname,m.phonenum,m.email,
+        p.id productId,p.productnum,p.productName,p.cityname,p.departuretime,p.Productprice,p.Productdesc,p.productstatus,
+        t.id t_id,t.name t_name,t.sex,t.phonenum t_phoneNum,t.credentialstype,t.credentialsnum,t.travellerType
+        from orders o
+        left JOIN order_traveller ot on o.id=ot.orderid
+        INNER JOIN member m ON o.memberId = m.id
+        INNER JOIN product p ON o.productId = p.id
+        LEFT JOIN traveller t ON t.id = ot.travellerId
+        where o.id=#{id}
+    </select>
+
+
+    <!--   <resultMap id="findByID" type="orders">
+           <id column="oid" property="id"></id>
+           <result property="orderTime" column="orderTime"></result>
+           <result property="orderStatus" column="orderStatus"></result>
+           <result property="peopleCount" column="peopleCount"></result>
+           <result property="payType" column="payType"></result>
+           <association property="product" column="productId" javaType="product">
+               <id column="id" property="id"></id>
+               <result property="productNum" column="productNum"></result>
+               <result property="productName" column="productName"></result>
+               <result property="productPrice" column="productPrice"></result>
+               <result property="cityName" column="cityName"></result>
+               <result property="departureTime" column="departureTime"></result>
+               <result property="productDesc" column="productDesc"></result>
+               <result property="productStatus" column="productStatus"></result>
+           </association>
+
+           <association property="member" column="memberId" javaType="member">
+               <id column="mid" property="id"></id>
+               <result property="name" column="mname"></result>
+               <result property="nickname" column="nickname"></result>
+               <result property="phoneNum" column="mphonenum"></result>
+               <result property="email" column="memail"></result>
+           </association>
+
+           <collection property="travellerList" ofType="traveller">
+               <id property="id" column="id"></id>
+               <result property="name" column="name"></result>
+               <result property="sex" column="sex"></result>
+               <result property="phoneNum" column="phonenum"></result>
+               <result property="credentialsType" column="credentialstype"></result>
+               <result property="credentialsNum" column="credentialsnum"></result>
+           </collection>
+       </resultMap>
+       <select id="findDetailsByID" resultMap="findByID" parameterType="String">
+           select
+           o.id oid,o.ordertime,o.peoplecount,o.paytype,o.orderstatus,o.memberid,o.productid,
+           t.id tid,t.name tname,t.sex,t.phonenum tphonenum,t.credentialstype,t.credentialsnum,
+           p.*,
+           m.id mid,m.name mname,m.nickname,m.phonenum mphonenum,m.email memail
+           from orders o
+           left join order_traveller ot on o.id=ot.orderid
+           left join traveller t on t.id=ot.travellerid
+           left join product p on p.id=o.productid
+           left join member m on m.id=o.memberid
+           where o.id=#{id}
+       </select>-->
+
+</mapper>
